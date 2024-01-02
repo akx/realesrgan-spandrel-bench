@@ -27,7 +27,7 @@ def torch_bgr_to_pil_image(tensor: torch.Tensor) -> Image.Image:
     # TODO: is `tensor.float().cpu()...numpy()` the most efficient idiom?
     arr = tensor.float().cpu().clamp_(0, 1).numpy()  # clamp
     arr = 255.0 * np.moveaxis(arr, 0, 2)  # CHW to HWC, rescale
-    arr = arr.astype(np.uint8)
+    arr = arr.round().astype(np.uint8)
     arr = arr[:, :, ::-1]  # flip BGR to RGB
     return Image.fromarray(arr, "RGB")
 
@@ -46,6 +46,7 @@ def main():
         model=RRDBNet(
             num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4
         ),
+        pre_pad=0,
     )
 
     print("Opening...")
