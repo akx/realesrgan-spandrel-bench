@@ -1,0 +1,25 @@
+name: Run
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  run:
+    name: Run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+          cache: pip
+          cache-dependency-path: requirements.in
+      - run: pip install torch -r requirements.in --extra-index-url https://download.pytorch.org/whl/cpu
+      - run: pip freeze
+      - run: wget -q https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth
+      - run: python bench.py -d cpu cat.jpg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: results
+          path: out
