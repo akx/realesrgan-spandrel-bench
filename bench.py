@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 
 import numpy as np
 import realesrgan
@@ -34,7 +35,9 @@ def torch_bgr_to_pil_image(tensor: torch.Tensor) -> Image.Image:
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("image")
     ap.add_argument("--device", "-d", type=str, required=True)
+    ap.add_argument("--out-dir", "-o", type=str, default="out")
     args = ap.parse_args()
     device = torch.device(args.device)
     path = "./RealESRGAN_x4plus_anime_6B.pth"
@@ -49,13 +52,16 @@ def main():
         pre_pad=0,
     )
 
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
     print("Opening...")
-    source_img = Image.open("test.png").convert("RGB")
+    source_img = Image.open(args.image).convert("RGB")
     print(source_img)
     with torch.no_grad():
         print("realesrgan...")
         img_re = Image.fromarray(re_model.enhance(np.array(source_img))[0])
-        img_re.save(f"out_realesrgan_{device}.png")
+        img_re.save(out_dir / f"out_realesrgan_{device}.png")
         print("=>", img_re)
 
         print("spandrel...")
@@ -63,14 +69,14 @@ def main():
             pil_image_to_torch_bgr(source_img).float().unsqueeze(0).to(device)
         )
         img_sp = torch_bgr_to_pil_image(s_model(source_img_t))
-        img_sp.save(f"out_spandrel_{device}.png")
+        img_sp.save(out_dir / f"out_spandrel_{device}.png")
         print("=>", img_sp)
 
         print("diffs...")
         img_abs_diff = ImageChops.difference(img_re, img_sp)
-        img_abs_diff.save(f"out_abs_diff_{device}.png")
+        img_abs_diff.save(out_dir / f"out_abs_diff_{device}.png")
         img_abs_diff_norm = ImageOps.equalize(img_abs_diff)
-        img_abs_diff_norm.save(f"out_abs_diff_norm_{device}.png")
+        img_abs_diff_norm.save(out_dir / f"out_abs_diff_norm_{device}.png")
     print("done.")
 
 
